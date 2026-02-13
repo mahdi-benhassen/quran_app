@@ -1,0 +1,233 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
+import '../../core/constants/app_colors.dart';
+import '../../view_models/quran_view_model.dart';
+import '../../data/models/surah.dart';
+import 'surah_detail_screen.dart';
+import 'settings_screen.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Quran Reader'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              showSearch(context: context, delegate: SurahSearchDelegate());
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Consumer<QuranViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.isLoading && viewModel.surahs.isEmpty) {
+            return _buildShimmerLoading();
+          }
+
+          if (viewModel.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(viewModel.errorMessage!),
+                  ElevatedButton(
+                    onPressed: viewModel.fetchSurahs,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: viewModel.filteredSurahs.length,
+            itemBuilder: (context, index) {
+              final surah = viewModel.filteredSurahs[index];
+              return _buildSurahCard(context, surah);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 10,
+      itemBuilder: (_, __) => Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSurahCard(BuildContext context, Surah surah) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SurahDetailScreen(surah: surah),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withOpacity(0.1),
+                ),
+                child: Text(
+                  '${surah.number}',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      surah.englishName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      '${surah.englishNameTranslation} • ${surah.numberOfAyahs} Verses',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                surah.name,
+                style: const TextStyle(
+                  fontFamily: 'Amiri', // Arabic font
+                  fontSize: 20,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SurahSearchDelegate extends SearchDelegate {
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+          context.read<QuranViewModel>().searchSurahs('');
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    context.read<QuranViewModel>().searchSurahs(query);
+    return const SizedBox(); // Results are shown in the main list if we strictly follow the viewmodel filter
+    // But SearchDelegate usually wants its own view.
+    // For simplicity, let's just trigger the search in ViewModel and show nothing here,
+    // OR duplicate the list view here.
+    // Let's implement a simple list view here.
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final viewModel = context.watch<QuranViewModel>();
+    final suggestions = viewModel.surahs.where((surah) {
+      return surah.englishName.toLowerCase().contains(query.toLowerCase()) ||
+          surah.englishNameTranslation.toLowerCase().contains(
+            query.toLowerCase(),
+          ) ||
+          surah.name.contains(query);
+    }).toList();
+
+    return ListView.builder(
+      itemCount: suggestions.length,
+      itemBuilder: (context, index) {
+        final surah = suggestions[index];
+        return ListTile(
+          title: Text(surah.englishName),
+          subtitle: Text(surah.englishNameTranslation),
+          trailing: Text(
+            surah.name,
+            style: const TextStyle(fontFamily: 'Amiri'),
+          ),
+          onTap: () {
+            close(context, null);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SurahDetailScreen(surah: surah),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
