@@ -47,7 +47,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         index: scrollIndex,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
-        alignment: 0.2, // Position item 20% from top of viewport
+        alignment: 0.0, // Position item at the top of viewport
       );
     }
   }
