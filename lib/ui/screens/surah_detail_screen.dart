@@ -8,6 +8,7 @@ import '../../data/models/ayah.dart';
 import '../../view_models/quran_view_model.dart';
 import '../../view_models/audio_view_model.dart';
 import '../../view_models/settings_view_model.dart';
+import '../../view_models/khatm_view_model.dart';
 import 'settings_screen.dart';
 
 class SurahDetailScreen extends StatefulWidget {
@@ -32,6 +33,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
       // Listen to audio changes and scroll to current ayah
       context.read<AudioViewModel>().addListener(_scrollToCurrentAyah);
+
+      // Save last read surah when entering
+      context.read<KhatmViewModel>().setLastRead(widget.surah.number, 1);
+
+      // Track visible ayah for last-read position
+      _positionsListener.itemPositions.addListener(_saveLastReadPosition);
     });
   }
 
@@ -52,8 +59,24 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  void _saveLastReadPosition() {
+    final positions = _positionsListener.itemPositions.value;
+    if (positions.isNotEmpty) {
+      // Get the topmost visible item (skip bismillah at index 0)
+      final topItem = positions.reduce((a, b) => a.index < b.index ? a : b);
+      final ayahIndex = topItem.index; // index 0 = bismillah, 1+ = ayahs
+      if (ayahIndex > 0) {
+        context.read<KhatmViewModel>().setLastRead(
+          widget.surah.number,
+          ayahIndex,
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _positionsListener.itemPositions.removeListener(_saveLastReadPosition);
     context.read<AudioViewModel>().removeListener(_scrollToCurrentAyah);
     super.dispose();
   }
@@ -142,6 +165,38 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           ),
           _buildMiniPlayer(),
         ],
+      ),
+      floatingActionButton: Consumer<KhatmViewModel>(
+        builder: (context, khatmModel, child) {
+          final isComplete = khatmModel.isSurahComplete(widget.surah.number);
+          return FloatingActionButton.extended(
+            onPressed: () {
+              khatmModel.toggleSurah(widget.surah.number);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isComplete
+                        ? '${widget.surah.englishName} marked as not complete'
+                        : '${widget.surah.englishName} marked as complete! ✓',
+                  ),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            backgroundColor: isComplete
+                ? Colors.grey[400]
+                : const Color(0xFF4CAF50),
+            icon: Icon(
+              isComplete ? Icons.undo : Icons.check,
+              color: Colors.white,
+            ),
+            label: Text(
+              isComplete ? 'Undo' : 'Mark Complete',
+              style: const TextStyle(color: Colors.white),
+            ),
+          );
+        },
       ),
     );
   }

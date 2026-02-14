@@ -7,6 +7,7 @@ import 'data/services/api_service.dart';
 import 'view_models/quran_view_model.dart';
 import 'view_models/audio_view_model.dart';
 import 'view_models/settings_view_model.dart';
+import 'view_models/khatm_view_model.dart';
 import 'ui/screens/splash_screen.dart';
 
 void main() {
@@ -29,6 +30,7 @@ class QuranApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => AudioViewModel()),
         ChangeNotifierProvider(create: (_) => SettingsViewModel()),
+        ChangeNotifierProvider(create: (_) => KhatmViewModel()),
       ],
       child: MaterialApp(
         title: 'Quran Reader',

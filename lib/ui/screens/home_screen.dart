@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
 import '../../view_models/quran_view_model.dart';
+import '../../view_models/khatm_view_model.dart';
 import '../../data/models/surah.dart';
 import 'surah_detail_screen.dart';
 import 'settings_screen.dart';
+import 'khatm_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,6 +23,16 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.search),
             onPressed: () {
               showSearch(context: context, delegate: SurahSearchDelegate());
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.checklist_rounded),
+            tooltip: 'Khatm Tracker',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KhatmScreen()),
+              );
             },
           ),
           IconButton(
@@ -88,9 +100,14 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildSurahCard(BuildContext context, Surah surah) {
+    final isComplete = context.watch<KhatmViewModel>().isSurahComplete(
+      surah.number,
+    );
+
     return Card(
-      elevation: 2,
+      elevation: isComplete ? 0 : 2,
       margin: const EdgeInsets.only(bottom: 12),
+      color: isComplete ? const Color(0xFFE8F5E9) : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
@@ -112,15 +129,19 @@ class HomeScreen extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: isComplete
+                      ? const Color(0xFF4CAF50)
+                      : AppColors.primary.withOpacity(0.1),
                 ),
-                child: Text(
-                  '${surah.number}',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: isComplete
+                    ? const Icon(Icons.check, color: Colors.white, size: 20)
+                    : Text(
+                        '${surah.number}',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -129,9 +150,10 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Text(
                       surah.englishName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: isComplete ? Colors.grey[600] : null,
                       ),
                     ),
                     Text(
@@ -146,10 +168,10 @@ class HomeScreen extends StatelessWidget {
               ),
               Text(
                 surah.name,
-                style: const TextStyle(
-                  fontFamily: 'Amiri', // Arabic font
+                style: TextStyle(
+                  fontFamily: 'Amiri',
                   fontSize: 20,
-                  color: AppColors.primary,
+                  color: isComplete ? Colors.grey[400] : AppColors.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
