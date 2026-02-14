@@ -153,21 +153,90 @@ class KhatmScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '${(model.progressPercent * 100).toStringAsFixed(1)}% Complete',
-                  style: const TextStyle(
-                    color: Color(0xFFFFD54F),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '${(model.progressPercent * 100).toStringAsFixed(1)}% Complete',
+                      style: const TextStyle(
+                        color: Color(0xFFFFD54F),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    if (model.completionsInLast30Days > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${model.completionsInLast30Days} Khatms (30d)',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${model.remainingCount} Surahs remaining',
                   style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
+                if (model.completedCount == 114) ...[
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      _showFinalizeDialog(context, model);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD54F),
+                      foregroundColor: const Color(0xFF1B5E20),
+                    ),
+                    icon: const Icon(Icons.stars),
+                    label: const Text('Complete Khatm'),
+                  ),
+                ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFinalizeDialog(BuildContext context, KhatmViewModel model) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mabrouk! 🎉'),
+        content: const Text(
+          'Congratulations on completing the full Quran! Would you like to record this Khatm and start a new one?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              model.finalizeKhatm();
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Khatm recorded! Starting new progress...'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Record & Reset'),
           ),
         ],
       ),

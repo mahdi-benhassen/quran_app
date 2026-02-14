@@ -74,6 +74,16 @@ class KhatmViewModel extends ChangeNotifier {
     await _saveProgress();
   }
 
+  void finalizeKhatm() {
+    _progress.completionHistory.add(DateTime.now());
+    _progress.completedSurahs.clear();
+    // Optional: reset last read or leave it. Usually starting Al-Fatiha again.
+    _progress.lastReadSurah = 1;
+    _progress.lastReadAyah = 1;
+    notifyListeners();
+    _saveProgress();
+  }
+
   bool isSurahComplete(int surahNumber) =>
       _progress.isSurahComplete(surahNumber);
 
@@ -82,4 +92,5 @@ class KhatmViewModel extends ChangeNotifier {
   int get remainingCount => _progress.remainingCount;
   int get lastReadSurah => _progress.lastReadSurah;
   int get lastReadAyah => _progress.lastReadAyah;
+  int get completionsInLast30Days => _progress.completionsInLast30Days;
 }

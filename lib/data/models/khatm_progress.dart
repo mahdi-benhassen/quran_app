@@ -6,6 +6,7 @@ class KhatmProgress {
   int lastReadAyah;
   final DateTime startDate;
   DateTime? targetDate;
+  final List<DateTime> completionHistory;
 
   KhatmProgress({
     Set<int>? completedSurahs,
@@ -13,8 +14,10 @@ class KhatmProgress {
     this.lastReadAyah = 1,
     DateTime? startDate,
     this.targetDate,
+    List<DateTime>? completionHistory,
   }) : completedSurahs = completedSurahs ?? {},
-       startDate = startDate ?? DateTime.now();
+       startDate = startDate ?? DateTime.now(),
+       completionHistory = completionHistory ?? [];
 
   double get progressPercent => completedSurahs.length / 114.0;
 
@@ -24,6 +27,13 @@ class KhatmProgress {
 
   bool isSurahComplete(int surahNumber) =>
       completedSurahs.contains(surahNumber);
+
+  int get completionsInLast30Days {
+    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+    return completionHistory
+        .where((date) => date.isAfter(thirtyDaysAgo))
+        .length;
+  }
 
   int get daysRemaining {
     if (targetDate == null) return 0;
@@ -42,6 +52,9 @@ class KhatmProgress {
     'lastReadAyah': lastReadAyah,
     'startDate': startDate.toIso8601String(),
     'targetDate': targetDate?.toIso8601String(),
+    'completionHistory': completionHistory
+        .map((e) => e.toIso8601String())
+        .toList(),
   };
 
   factory KhatmProgress.fromJson(Map<String, dynamic> json) {
@@ -55,6 +68,11 @@ class KhatmProgress {
       targetDate: json['targetDate'] != null
           ? DateTime.parse(json['targetDate'])
           : null,
+      completionHistory:
+          (json['completionHistory'] as List<dynamic>?)
+              ?.map((e) => DateTime.parse(e))
+              .toList() ??
+          [],
     );
   }
 
