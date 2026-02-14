@@ -1,6 +1,6 @@
 {
-    "name": "quran_app",
-    "short_name": "quran_app",
+    "name": "Quran Reader",
+    "short_name": "Quran Reader",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#hex_code",
