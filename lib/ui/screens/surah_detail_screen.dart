@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/surah.dart';
 import '../../data/models/ayah.dart';
@@ -19,12 +20,42 @@ class SurahDetailScreen extends StatefulWidget {
 }
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
+  final ItemScrollController _scrollController = ItemScrollController();
+  final ItemPositionsListener _positionsListener =
+      ItemPositionsListener.create();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<QuranViewModel>().getSurahDetails(widget.surah.number);
+
+      // Listen to audio changes and scroll to current ayah
+      context.read<AudioViewModel>().addListener(_scrollToCurrentAyah);
     });
+  }
+
+  void _scrollToCurrentAyah() {
+    final audioModel = context.read<AudioViewModel>();
+    if (audioModel.currentAyah != null && _scrollController.isAttached) {
+      final currentAyah = audioModel.currentAyah!;
+      // Index is numberInSurah (1-indexed), so we use it directly for the list (which has bismillah at index 0)
+      final scrollIndex =
+          currentAyah.numberInSurah; // This accounts for bismillah at index 0
+
+      _scrollController.scrollTo(
+        index: scrollIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.2, // Position item 20% from top of viewport
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    context.read<AudioViewModel>().removeListener(_scrollToCurrentAyah);
+    super.dispose();
   }
 
   @override
@@ -79,7 +110,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     }
 
                     final ayahs = snapshot.data!;
-                    return ListView.separated(
+                    return ScrollablePositionedList.separated(
+                      itemScrollController: _scrollController,
+                      itemPositionsListener: _positionsListener,
                       padding: const EdgeInsets.all(16),
                       itemCount:
                           ayahs.length +
