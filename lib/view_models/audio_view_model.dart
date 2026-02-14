@@ -64,11 +64,11 @@ class AudioViewModel extends ChangeNotifier {
         // For simplicity, just play.
       }
 
-      notifyListeners();
-
       if (ayah.audio.isNotEmpty) {
         await _player.setUrl(ayah.audio);
         await _player.play();
+        // Notify listeners AFTER audio starts playing for better scroll sync
+        notifyListeners();
       }
     } catch (e) {
       print("Error playing audio: $e");

@@ -45,8 +45,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
       _scrollController.scrollTo(
         index: scrollIndex,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
         alignment: 0.0, // Position item at the top of viewport
       );
     }
